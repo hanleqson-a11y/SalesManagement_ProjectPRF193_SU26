@@ -1,12 +1,18 @@
 #ifndef ACCOUNT_H
 #define ACCOUNT_H
 
+#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <iostream>
 #include "Utility.h"
 using namespace std;
+
+// ============================================================
+//  ACCOUNT.H
+//  Lop Account: 1 tai khoan dang nhap gom Username, Password, Role
+//  Lop AccountManager: quan ly danh sach tai khoan (doc/ghi file account.txt)
+// ============================================================
 
 class Account {
 public:
@@ -15,182 +21,104 @@ public:
     string role; // "Admin" (chu cua hang) hoac "Staff" (nhan vien)
 
     Account() {}
-    Account(string u, string p, string r) : username(u), password(p), role(r) {}
+    Account(string u, string p, string r) {
+        username = u;
+        password = p;
+        role = r;
+    }
+
+    bool isAdmin() {
+        return toLowerStr(role) == "admin";
+    }
 };
 
 class AccountManager {
-private:
-    vector<Account> accounts;
-    string filename;
-
 public:
-    AccountManager(string file = "account.txt") : filename(file) {
-        loadFromFile();
+    vector<Account> danhSach;
+    string tenFile;
+
+    AccountManager(string file = "account.txt") {
+        tenFile = file;
+        docFile();
     }
 
-    void loadFromFile() {
-        accounts.clear();
-        ifstream fin(filename);
+    // Doc danh sach tai khoan tu file
+    // Moi dong trong file co dang: username password role
+    void docFile() {
+        danhSach.clear();
+        ifstream fin(tenFile);
         if (!fin.is_open()) return;
+
         string line;
         while (getline(fin, line)) {
             line = trim(line);
-            if (line.empty()) continue;
-            vector<string> tok = splitTokens(line);
-            if (tok.size() < 3) continue;
-            accounts.push_back(Account(tok[0], tok[1], tok[2]));
+            if (line == "") continue;
+            vector<string> tu = splitBySpace(line);
+            if (tu.size() < 3) continue;
+            danhSach.push_back(Account(tu[0], tu[1], tu[2]));
         }
         fin.close();
     }
 
-    void saveToFile() {
-        ofstream fout(filename);
-        for (auto &a : accounts) {
-            fout << a.username << " " << a.password << " " << a.role << "\n";
+    // Ghi lai toan bo danh sach tai khoan xuong file
+    void ghiFile() {
+        ofstream fout(tenFile);
+        for (int i = 0; i < (int)danhSach.size(); i++) {
+            fout << danhSach[i].username << " " << danhSach[i].password << " "
+                 << danhSach[i].role << "\n";
         }
         fout.close();
     }
 
-    int findIndexByUsername(const string &username) {
-        for (size_t i = 0; i < accounts.size(); i++)
-            if (accounts[i].username == username) return (int)i;
+    // Tim tai khoan theo username, tra ve chi so trong danhSach (-1 neu khong co)
+    int timTheoUsername(string username) {
+        for (int i = 0; i < (int)danhSach.size(); i++) {
+            if (danhSach[i].username == username) return i;
+        }
         return -1;
     }
 
-    // Dang nhap. Tra ve con tro Account neu thanh cong, nullptr neu nguoi dung go "exit" de thoat chuong trinh.
-    Account* loginInteractive() {
-        while (true) {
-            string username, password;
-            try {
-                username = readInput("Nhap ten tai khoan (hoac 'exit' de thoat chuong trinh): ");
-                password = readInput("Nhap mat khau: ");
-            } catch (ExitToPreviousMenu&) {
-                return nullptr;
-            }
-            int idx = findIndexByUsername(username);
-            if (idx != -1 && accounts[idx].password == password) {
-                cout << "Dang nhap thanh cong! Xin chao " << accounts[idx].username
-                     << " (" << accounts[idx].role << ")\n";
-                return &accounts[idx];
-            } else {
-                cout << "Sai ten tai khoan hoac mat khau, vui long nhap lai!\n";
-            }
-        }
+    bool tonTaiUsername(string username) {
+        return timTheoUsername(username) != -1;
     }
 
-    void changeUsernameInteractive(string &currentUsername) {
-        string oldUser = readInput("Nhap ten tai khoan hien tai: ");
-        string oldPass = readInput("Nhap mat khau hien tai: ");
-        int idx = findIndexByUsername(oldUser);
-        if (idx == -1 || accounts[idx].password != oldPass) {
-            cout << "Ten tai khoan hoac mat khau khong dung!\n";
-            return;
-        }
-        string newUser;
-        while (true) {
-            newUser = readInput("Nhap ten tai khoan moi: ");
-            if (findIndexByUsername(newUser) != -1) {
-                cout << "Ten tai khoan da ton tai, vui long nhap ten khac!\n";
-                continue;
-            }
-            break;
-        }
-        accounts[idx].username = newUser;
-        saveToFile();
-        if (oldUser == currentUsername) currentUsername = newUser;
-        cout << "Doi ten tai khoan thanh cong!\n";
+    // Kiem tra dang nhap, tra ve chi so tai khoan neu dung, -1 neu sai
+    int dangNhap(string username, string password) {
+        int i = timTheoUsername(username);
+        if (i != -1 && danhSach[i].password == password) return i;
+        return -1;
     }
 
-    void changePasswordInteractive(string &currentUsername) {
-        string oldUser = readInput("Nhap ten tai khoan hien tai: ");
-        string oldPass = readInput("Nhap mat khau hien tai: ");
-        int idx = findIndexByUsername(oldUser);
-        if (idx == -1 || accounts[idx].password != oldPass) {
-            cout << "Ten tai khoan hoac mat khau khong dung!\n";
-            return;
-        }
-        string newPass = readInput("Nhap mat khau moi: ");
-        accounts[idx].password = newPass;
-        saveToFile();
-        cout << "Doi mat khau thanh cong!\n";
+    bool themTaiKhoan(string username, string password, string role) {
+        if (tonTaiUsername(username)) return false;
+        danhSach.push_back(Account(username, password, role));
+        ghiFile();
+        return true;
     }
 
-    void addStaffAccountInteractive() {
-        string username;
-        while (true) {
-            username = readInput("Nhap ten tai khoan nhan vien moi: ");
-            if (findIndexByUsername(username) != -1) {
-                cout << "Ten tai khoan da ton tai, vui long nhap ten khac!\n";
-                continue;
-            }
-            break;
-        }
-        string password = readInput("Nhap mat khau: ");
-        accounts.push_back(Account(username, password, "Staff"));
-        saveToFile();
-        cout << "Tao tai khoan nhan vien thanh cong!\n";
+    bool xoaTaiKhoan(string username) {
+        int i = timTheoUsername(username);
+        if (i == -1) return false;
+        danhSach.erase(danhSach.begin() + i);
+        ghiFile();
+        return true;
     }
 
-    void deleteStaffAccountInteractive(const string &currentUsername) {
-        string username = readInput("Nhap ten tai khoan can xoa: ");
-        int idx = findIndexByUsername(username);
-        if (idx == -1) { cout << "Khong tim thay tai khoan nay!\n"; return; }
-        if (accounts[idx].role == "Admin") {
-            cout << "Khong the xoa tai khoan Admin!\n";
-            return;
-        }
-        if (username == currentUsername) {
-            cout << "Khong the xoa tai khoan ban dang dang nhap!\n";
-            return;
-        }
-        string confirm = readInput("Ban co chac muon xoa tai khoan " + username + "? (Y/N): ");
-        if (toLower(confirm) == "y") {
-            accounts.erase(accounts.begin() + idx);
-            saveToFile();
-            cout << "Xoa tai khoan thanh cong!\n";
-        } else {
-            cout << "Da huy xoa.\n";
-        }
+    bool doiUsername(string usernameCu, string password, string usernameMoi) {
+        int i = timTheoUsername(usernameCu);
+        if (i == -1 || danhSach[i].password != password) return false;
+        if (tonTaiUsername(usernameMoi)) return false;
+        danhSach[i].username = usernameMoi;
+        ghiFile();
+        return true;
     }
 
-    // Muc 6: Doi ten tai khoan / mat khau
-    void runChangeAccountMenu(string &currentUsername) {
-        while (true) {
-            cout << "\n===== 6. DOI TEN TAI KHOAN / MAT KHAU =====\n";
-            cout << "6.1. Doi ten tai khoan\n";
-            cout << "6.2. Doi mat khau\n";
-            cout << "(Nhap 'exit' de quay lai menu truoc do)\n";
-            string choice;
-            try {
-                choice = readInput("Chon muc: ");
-            } catch (ExitToPreviousMenu&) { return; }
-
-            try {
-                if (choice == "1") changeUsernameInteractive(currentUsername);
-                else if (choice == "2") changePasswordInteractive(currentUsername);
-                else cout << "Lua chon khong hop le!\n";
-            } catch (ExitToPreviousMenu&) { continue; }
-        }
-    }
-
-    // Muc 7: Tao/Xoa tai khoan nhan vien (chi Admin)
-    void runAdminAccountMenu(const string &currentUsername) {
-        while (true) {
-            cout << "\n===== 7. TAO/XOA TAI KHOAN NHAN VIEN =====\n";
-            cout << "7.1. Xoa tai khoan\n";
-            cout << "7.2. Them tai khoan\n";
-            cout << "(Nhap 'exit' de quay lai menu truoc do)\n";
-            string choice;
-            try {
-                choice = readInput("Chon muc: ");
-            } catch (ExitToPreviousMenu&) { return; }
-
-            try {
-                if (choice == "1") deleteStaffAccountInteractive(currentUsername);
-                else if (choice == "2") addStaffAccountInteractive();
-                else cout << "Lua chon khong hop le!\n";
-            } catch (ExitToPreviousMenu&) { continue; }
-        }
+    bool doiPassword(string username, string passwordCu, string passwordMoi) {
+        int i = timTheoUsername(username);
+        if (i == -1 || danhSach[i].password != passwordCu) return false;
+        danhSach[i].password = passwordMoi;
+        ghiFile();
+        return true;
     }
 };
 
