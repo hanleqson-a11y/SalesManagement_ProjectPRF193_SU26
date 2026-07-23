@@ -33,8 +33,8 @@ public:
     }
 
     void inRa() {
-        cout << left << setw(8) << id << setw(25) << name
-             << setw(15) << formatMoney(price) << setw(10) << quantity
+        cout << left << setw(8) << id << setw(32) << shorten(name, 30)
+             << setw(21) << formatMoney(price) << setw(10) << quantity
              << setw(15) << category << "\n";
     }
 };
@@ -161,8 +161,8 @@ public:
     }
 
     void inTieuDe() {
-        cout << left << setw(8) << "ID" << setw(25) << "Ten san pham"
-             << setw(15) << "Gia" << setw(10) << "So luong" << setw(15) << "Loai" << "\n";
+        cout << left << setw(8) << "ID" << setw(32) << "Ten san pham"
+             << setw(21) << "Gia" << setw(10) << "So luong" << setw(15) << "Loai" << "\n";
         cout << string(73, '-') << "\n";
     }
 

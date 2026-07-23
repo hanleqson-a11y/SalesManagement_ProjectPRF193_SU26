@@ -164,5 +164,10 @@ string formatMoney(double amount) {
     }
     return result + " VND";
 }
-
+// chuyen ki tu thua thanh ...
+string shorten(const string& s, size_t width) {
+    if (s.length() <= width)
+        return s;
+    return s.substr(0, width - 3) + "...";
+}
 #endif
