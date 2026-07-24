@@ -1,4 +1,4 @@
-# Chương trình Quản lý Cửa hàng (C++) - bản đơn giản, dễ hiểu
+# Chương trình Quản lý Cửa hàng (C++)
 
 ## Danh sách file
 ```
