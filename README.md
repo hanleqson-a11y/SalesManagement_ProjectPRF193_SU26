@@ -15,7 +15,6 @@ customer.txt   - Danh sách khách hàng (dòng "0 0 0" là khách vãng lai)
 invoice.txt    - Danh sách hóa đơn
 ```
 
-Toàn bộ code viết theo phong cách đơn giản cho người mới học:
 - Mỗi lớp (`class`) chỉ có các biến `public` và các hàm thành viên viết luôn phần thân
   ngay trong file `.h` (không tách file `.cpp` riêng, không dùng con trỏ phức tạp).
 - Dùng **chỉ số (index)** trong `vector` thay vì con trỏ để tìm/sửa/xóa dữ liệu
